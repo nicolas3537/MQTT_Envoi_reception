@@ -50,12 +50,26 @@ void callback(char* topic, byte *payload, unsigned int length) {
   Serial.print("donnee:");
   Serial.write(payload, length);
   Serial.println();
-  Serial.println("donnée convertie 1");
+ 
   String messageTemp;
+  String topictemp;
   for (int i = 0; i < length; i++) {
     messageTemp += (char)payload[i];
   }
-  cons_vent_bas = messageTemp.toInt();
+  for (int j = 0; j < strlen(topic);j++){
+    topictemp += (char)topic[j];
+  }
+  Serial.println(topictemp);
+  Serial.println(strlen(topic));
+  if (topictemp == topic_1)
+  {
+    Serial.println("donnée convertie 1");
+    cons_vent_bas = messageTemp.toInt();
+  }
+  else if (topictemp == topic_2) {
+    Serial.println("donnée convertie 2");
+    cons_vent_haut = messageTemp.toInt();
+  }
   Serial.println(cons_vent_bas);
 
 }
@@ -97,7 +111,7 @@ void setup() {
       Serial.println(monClientMqtt.state());
   }
 monClientMqtt.setCallback(callback);
-monClientMqtt.publish(topic_1, "0");
+monClientMqtt.publish("Test/vent/Temp_cons_0", "0");
 monClientMqtt.publish(topic_2, "0");
 }
 
