@@ -36,20 +36,29 @@ boolean etat_ventil_2_old = 0;
 // Variable de Tempo pour déclenchement de lecture
 unsigned long previousMillis = 0;
 
+#define topic_1 "Test/vent/Temp_cons_0"
+#define topic_2 "Test/vent/Temp_cons_1"
 //MQTT définition
 #define Clientarduino "Test"
 #define MQTT_USERNAME "homeassistant"
 #define MQTT_KEY "ohs8Phookeod6chae0ENg5aingeite8Jaebooziheevug0huinei8Ood9iePoh9l"
 
 void callback(char* topic, byte *payload, unsigned int length) {
-   Serial.println("-------Nouveau message du broker mqtt-----");
-   Serial.print("Canal:");
-   Serial.println(topic);
-   Serial.print("donnee:");
-   Serial.write(payload, length);
-   Serial.println();
-  cons_vent_bas = (int)payload[0];
- }
+  Serial.println("-------Nouveau message du broker mqtt-----");
+  Serial.print("Canal:");
+  Serial.println(topic);
+  Serial.print("donnee:");
+  Serial.write(payload, length);
+  Serial.println();
+  Serial.println("donnée convertie 1");
+  String messageTemp;
+  for (int i = 0; i < length; i++) {
+    messageTemp += (char)payload[i];
+  }
+  cons_vent_bas = messageTemp.toInt();
+  Serial.println(cons_vent_bas);
+
+}
 
 
 void setup() {
@@ -88,14 +97,16 @@ void setup() {
       Serial.println(monClientMqtt.state());
   }
 monClientMqtt.setCallback(callback);
-monClientMqtt.publish("Test/vent/Temp_cons_0", "0");
-monClientMqtt.publish("Test/vent/Temp_cons_1", "0");
+monClientMqtt.publish(topic_1, "0");
+monClientMqtt.publish(topic_2, "0");
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   //Mesure du temps
   // Publication MQTT
+  unsigned long currentMillis = millis();
+
   monClientMqtt.loop();
       if(etat_ventil_1 != etat_ventil_1_old){
         monClientMqtt.publish("Baie/vent/etat_vent_1", String(etat_ventil_1).c_str());
@@ -108,17 +119,22 @@ void loop() {
         Serial.println("Trame ventilateur 2 envoyé");                  
       }
 //Récupération de valeur sur MQTT
-cons_vent_bas = monClientMqtt.subscribe("Test/vent/Temp_cons_0");
-Serial.print("consigne bas :");
-Serial.println(cons_vent_bas);
-cons_vent_haut = int(monClientMqtt.subscribe("Test/vent/Temp_cons_1"));
-Serial.print("consigne haute :");
-Serial.println(cons_vent_haut);
-
+if ( currentMillis - previousMillis >= 6000 ) 
+    {
+      previousMillis = currentMillis;
+      monClientMqtt.subscribe("Test/vent/Temp_cons_0");
+      Serial.print("consigne bas :");
+      Serial.println(cons_vent_bas);
+      monClientMqtt.subscribe("Test/vent/Temp_cons_1");
+      Serial.print("consigne haute :");
+      Serial.println(cons_vent_haut);
+        }
 //Débug
-Serial.print(etat_ventil_1);
-Serial.print(etat_ventil_1_old);
-Serial.print(etat_ventil_2);
-Serial.print(etat_ventil_2_old);
-delay(5000);
+if ( currentMillis - previousMillis >= 60000 ) 
+    {
+      Serial.print(etat_ventil_1);
+      Serial.print(etat_ventil_1_old);
+      Serial.print(etat_ventil_2);
+      Serial.print(etat_ventil_2_old);
+    }
 }
